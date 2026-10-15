@@ -35,13 +35,20 @@ export function getMiniProgramEnvVersion(): MiniProgramEnvVersion {
   return 'develop';
 }
 
-export function isReleaseBuild(): boolean {
-  return getMiniProgramEnvVersion() === 'release';
+export function isReleaseBuild(
+  envVersion: MiniProgramEnvVersion = getMiniProgramEnvVersion(),
+): boolean {
+  return envVersion === 'release';
 }
 
-/** Dev-login fallback is only allowed outside release builds. */
-export function isDevLoginAllowed(): boolean {
-  return !isReleaseBuild();
+/**
+ * Dev-login fallback is only allowed outside release builds.
+ * Pass `envVersion` in unit tests to avoid depending on wx runtime.
+ */
+export function isDevLoginAllowed(
+  envVersion: MiniProgramEnvVersion = getMiniProgramEnvVersion(),
+): boolean {
+  return envVersion !== 'release';
 }
 
 function isLocalOrPrivateHost(hostname: string): boolean {

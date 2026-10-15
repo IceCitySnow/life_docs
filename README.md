@@ -195,13 +195,16 @@ npm run test:e2e
 npm run build
 ```
 
-小程序类型检查：
+小程序类型检查与登录隔离单测：
 
 ```bash
 cd miniprogram
 npm install
 npm run typecheck
+npm test
 ```
+
+完整门禁日志保存在 `ops/quality-gates/`（含 backend `npm run check` 输出）。
 
 ## 6. 全局开发规则
 

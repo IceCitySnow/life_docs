@@ -48,6 +48,8 @@ describe('AuthService', () => {
     await expect(
       service.loginWithDevOpenId('seed-user-openid'),
     ).rejects.toBeInstanceOf(NotFoundException);
+    expect(userCreate).not.toHaveBeenCalled();
+    expect(sessionCreate).not.toHaveBeenCalled();
   });
 
   it('issues a session for wechat login without leaking session_key', async () => {

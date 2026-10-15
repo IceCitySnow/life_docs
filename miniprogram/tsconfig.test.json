@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["jest", "node", "miniprogram-api-typings"],
+    "esModuleInterop": true,
+    "isolatedModules": true
+  },
+  "include": ["./**/*.ts", "./__tests__/**/*.ts"],
+  "exclude": ["node_modules"]
+}
