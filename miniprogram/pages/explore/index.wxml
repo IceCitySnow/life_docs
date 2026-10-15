@@ -1,0 +1,46 @@
+<view class="page">
+  <view class="page-title">探索</view>
+  <view class="page-desc">浏览现实生活探索任务，点进去开始你的旅程。</view>
+
+  <view class="chip-row" wx:if="{{categories.length}}">
+    <view
+      class="chip {{item.active ? 'active' : ''}}"
+      wx:for="{{categories}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onSelectCategory"
+    >{{item.name}}</view>
+  </view>
+
+  <view class="state-box" wx:if="{{loading}}">
+    <view class="state-title">加载中…</view>
+  </view>
+
+  <view class="state-box" wx:elif="{{error}}">
+    <view class="state-title">加载失败</view>
+    <view>{{error}}</view>
+    <view class="state-action" bindtap="onRetry">重试</view>
+  </view>
+
+  <view class="state-box" wx:elif="{{empty}}">
+    <view class="state-title">暂无任务</view>
+    <view>换个分类试试，或稍后再来。</view>
+  </view>
+
+  <block wx:else>
+    <view
+      class="card"
+      wx:for="{{tasks}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onOpenTask"
+    >
+      <view class="card-title">{{item.title}}</view>
+      <view class="card-meta">
+        {{item.categoryName}} · {{item.difficultyLabel}}
+        <text wx:if="{{item.estimatedMinutes}}"> · 约 {{item.estimatedMinutes}} 分钟</text>
+      </view>
+      <view class="card-summary">{{item.summary}}</view>
+    </view>
+  </block>
+</view>

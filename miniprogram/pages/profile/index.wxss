@@ -1,0 +1,5 @@
+.wish-input {
+  width: 100%;
+  padding: 16rpx 0;
+  font-size: 28rpx;
+}

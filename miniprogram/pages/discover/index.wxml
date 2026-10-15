@@ -1,0 +1,47 @@
+<view class="page">
+  <view class="page-title">发现</view>
+  <view class="page-desc">浏览他人公开的探索回忆。私密内容不会出现在这里。</view>
+
+  <view class="state-box" wx:if="{{loading}}">
+    <view class="state-title">加载中…</view>
+  </view>
+
+  <view class="state-box" wx:elif="{{error}}">
+    <view class="state-title">加载失败</view>
+    <view>{{error}}</view>
+    <view class="state-action" bindtap="onRetry">重试</view>
+  </view>
+
+  <view class="state-box" wx:elif="{{empty}}">
+    <view class="state-title">还没有公开动态</view>
+    <view>完成探索后，可在写回忆时选择「公开」。</view>
+  </view>
+
+  <block wx:else>
+    <view class="card" wx:for="{{records}}" wx:key="id">
+      <view class="card-title">{{item.titleSnapshot}}</view>
+      <view class="card-meta">{{item.authorName}} · {{item.createdText}}</view>
+      <view class="card-summary" wx:if="{{item.reflectionText}}">{{item.reflectionText}}</view>
+      <view class="card-meta">
+        赞 {{item.likeCount}} · 收藏 {{item.favoriteCount}}
+      </view>
+      <view class="btn-row">
+        <view
+          class="btn {{item.likedByMe ? 'primary' : ''}} {{item.busy ? 'disabled' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onToggleLike"
+        >{{item.likedByMe ? '已赞' : '点赞'}}</view>
+        <view
+          class="btn {{item.favoritedByMe ? 'primary' : ''}} {{item.busy ? 'disabled' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onToggleFavorite"
+        >{{item.favoritedByMe ? '已收藏' : '收藏'}}</view>
+        <view
+          class="btn danger {{item.busy ? 'disabled' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onReport"
+        >举报</view>
+      </view>
+    </view>
+  </block>
+</view>

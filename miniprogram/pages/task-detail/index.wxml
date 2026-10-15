@@ -1,0 +1,65 @@
+<view class="page">
+  <view class="state-box" wx:if="{{loading}}">
+    <view class="state-title">加载中…</view>
+  </view>
+
+  <view class="state-box" wx:elif="{{error}}">
+    <view class="state-title">加载失败</view>
+    <view>{{error}}</view>
+    <view class="state-action" bindtap="onRetry">重试</view>
+  </view>
+
+  <block wx:elif="{{task}}">
+    <view class="page-title">{{task.title}}</view>
+    <view class="card-meta">
+      {{task.categoryName}} · {{task.difficultyLabel}}
+      <text wx:if="{{task.estimatedMinutes}}"> · 约 {{task.estimatedMinutes}} 分钟</text>
+    </view>
+    <view class="page-desc">{{task.summary}}</view>
+
+    <view class="section-title">怎么做</view>
+    <view class="card">
+      <view class="card-summary">{{task.instructions}}</view>
+    </view>
+
+    <view class="section-title" wx:if="{{task.budgetNote || task.alternatives || task.reflectionPrompt}}">补充说明</view>
+    <view class="card" wx:if="{{task.budgetNote}}">
+      <view class="card-meta">预算</view>
+      <view class="card-summary">{{task.budgetNote}}</view>
+    </view>
+    <view class="card" wx:if="{{task.alternatives}}">
+      <view class="card-meta">替代方案</view>
+      <view class="card-summary">{{task.alternatives}}</view>
+    </view>
+    <view class="card" wx:if="{{task.reflectionPrompt}}">
+      <view class="card-meta">回忆提示</view>
+      <view class="card-summary">{{task.reflectionPrompt}}</view>
+    </view>
+
+    <view class="section-title">我的状态</view>
+    <view class="card">
+      <view class="card-summary">
+        收藏：{{flags.isFavorite ? '已收藏' : '未收藏'}} ·
+        愿望：{{flags.isWished ? '已加入' : '未加入'}} ·
+        开始：{{flags.startedAt ? '已开始' : '未开始'}} ·
+        完成：{{flags.completedAt ? '已完成' : '未完成'}}
+      </view>
+    </view>
+
+    <view class="btn-row">
+      <view class="btn {{busy ? 'disabled' : ''}}" bindtap="onToggleFavorite">
+        {{flags.isFavorite ? '取消收藏' : '收藏'}}
+      </view>
+      <view class="btn {{busy ? 'disabled' : ''}}" bindtap="onToggleWish">
+        {{flags.isWished ? '移出愿望' : '加入愿望'}}
+      </view>
+    </view>
+    <view class="btn-row">
+      <view class="btn {{busy ? 'disabled' : ''}}" bindtap="onStart">开始探索</view>
+      <view class="btn primary {{busy ? 'disabled' : ''}}" bindtap="onComplete">标记完成</view>
+    </view>
+    <view class="btn-row" wx:if="{{flags.completedAt}}">
+      <view class="btn primary {{busy ? 'disabled' : ''}}" bindtap="onWriteRecord">写一条回忆</view>
+    </view>
+  </block>
+</view>

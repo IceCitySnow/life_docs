@@ -1,0 +1,45 @@
+# Example TLS reverse proxy for the API.
+# Replace api.example.com and certificate paths before use.
+#
+# Upstream listens on loopback only (see docker-compose.prod.yml).
+
+upstream life_exploration_api {
+    server 127.0.0.1:3000;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name api.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name api.example.com;
+
+    ssl_certificate     /etc/ssl/certs/api.example.com.fullchain.pem;
+    ssl_certificate_key /etc/ssl/private/api.example.com.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    # Reject oversized JSON bodies early.
+    client_max_body_size 1m;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options nosniff always;
+
+    location /api/ {
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-Id $request_id;
+        proxy_pass http://life_exploration_api;
+    }
+
+    location = /api/v1/health {
+        proxy_pass http://life_exploration_api;
+        access_log off;
+    }
+}

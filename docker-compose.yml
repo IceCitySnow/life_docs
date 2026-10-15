@@ -1,0 +1,23 @@
+# Development-only Compose. For production-like networking (DB not published),
+# use docker-compose.prod.yml instead.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: life-exploration-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: life_exploration
+      POSTGRES_PASSWORD: life_exploration_dev
+      POSTGRES_DB: life_exploration
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U life_exploration -d life_exploration']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:

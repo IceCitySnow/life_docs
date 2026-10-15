@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Tracks applied engineering baseline; no product data.
+model SchemaMeta {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+  DELETING
+}
+
+enum TaskDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum TaskStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum RecordVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum WishStatus {
+  PENDING
+  COMPLETED
+  ARCHIVED
+}
+
+enum ContentModerationStatus {
+  VISIBLE
+  HIDDEN
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE
+  COPYRIGHT
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  REJECTED
+}
+
+model User {
+  id              String              @id @default(uuid()) @db.Uuid
+  wxOpenId        String              @unique
+  displayName     String?
+  avatarUrl       String?
+  role            UserRole            @default(USER)
+  status          UserStatus          @default(ACTIVE)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  sessions        AuthSession[]
+  userTasks       UserTask[]
+  records         ExplorationRecord[]
+  wishes          CustomWish[]
+  recordLikes     RecordLike[]
+  recordFavorites RecordFavorite[]
+  reportsFiled    Report[]            @relation("ReportReporter")
+  reportsHandled  Report[]            @relation("ReportHandler")
+}
+
+model AuthSession {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Category {
+  id            String       @id @default(uuid()) @db.Uuid
+  name          String
+  slug          String       @unique
+  description   String?
+  coverImageUrl String?
+  sortOrder     Int          @default(0)
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  tasks         Task[]
+  wishes        CustomWish[]
+
+  @@index([isActive, sortOrder])
+}
+
+model Task {
+  id               String              @id @default(uuid()) @db.Uuid
+  categoryId       String              @db.Uuid
+  category         Category            @relation(fields: [categoryId], references: [id])
+  title            String
+  summary          String
+  instructions     String
+  coverImageUrl    String?
+  estimatedMinutes Int?
+  difficulty       TaskDifficulty
+  budgetNote       String?
+  requirements     String?
+  alternatives     String?
+  reflectionPrompt String?
+  tags             String[]            @default([])
+  status           TaskStatus          @default(DRAFT)
+  sortOrder        Int                 @default(0)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  userTasks        UserTask[]
+  records          ExplorationRecord[]
+  reports          Report[]
+
+  @@index([status, categoryId])
+  @@index([status, sortOrder])
+  @@index([difficulty])
+}
+
+model UserTask {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  taskId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Restrict)
+  isFavorite  Boolean   @default(false)
+  isWished    Boolean   @default(false)
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, taskId])
+  @@index([userId, isFavorite])
+  @@index([userId, isWished])
+  @@index([userId, completedAt])
+}
+
+model CustomWish {
+  id          String              @id @default(uuid()) @db.Uuid
+  userId      String              @db.Uuid
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  categoryId  String?             @db.Uuid
+  category    Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  status      WishStatus          @default(PENDING)
+  completedAt DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  records     ExplorationRecord[]
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+}
+
+model ExplorationRecord {
+  id               String                   @id @default(uuid()) @db.Uuid
+  userId           String                   @db.Uuid
+  user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskId           String?                  @db.Uuid
+  task             Task?                    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  customWishId     String?                  @db.Uuid
+  customWish       CustomWish?              @relation(fields: [customWishId], references: [id], onDelete: SetNull)
+  titleSnapshot    String
+  reflectionText   String?
+  photoRefs        String[]                 @default([])
+  visibility       RecordVisibility         @default(PRIVATE)
+  moderationStatus ContentModerationStatus  @default(VISIBLE)
+  hiddenAt         DateTime?
+  completedAt      DateTime                 @default(now())
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  likes            RecordLike[]
+  favorites        RecordFavorite[]
+  reports          Report[]
+
+  @@index([userId, createdAt])
+  @@index([visibility, moderationStatus, completedAt])
+  @@index([taskId])
+  @@index([customWishId])
+}
+
+model RecordLike {
+  id        String            @id @default(uuid()) @db.Uuid
+  userId    String            @db.Uuid
+  recordId  String            @db.Uuid
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  record    ExplorationRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  createdAt DateTime          @default(now())
+
+  @@unique([userId, recordId])
+  @@index([recordId])
+}
+
+model RecordFavorite {
+  id        String            @id @default(uuid()) @db.Uuid
+  userId    String            @db.Uuid
+  recordId  String            @db.Uuid
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  record    ExplorationRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  createdAt DateTime          @default(now())
+
+  @@unique([userId, recordId])
+  @@index([recordId])
+  @@index([userId, createdAt])
+}
+
+model Report {
+  id              String        @id @default(uuid()) @db.Uuid
+  reporterUserId  String        @db.Uuid
+  reporter        User          @relation("ReportReporter", fields: [reporterUserId], references: [id], onDelete: Cascade)
+  recordId        String?       @db.Uuid
+  record          ExplorationRecord? @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  taskId          String?       @db.Uuid
+  task            Task?         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  reason          ReportReason
+  details         String?
+  status          ReportStatus  @default(PENDING)
+  createdAt       DateTime      @default(now())
+  handledAt       DateTime?
+  handledByUserId String?       @db.Uuid
+  handledBy       User?         @relation("ReportHandler", fields: [handledByUserId], references: [id], onDelete: SetNull)
+  resolutionNote  String?
+
+  @@index([status, createdAt])
+  @@index([recordId])
+  @@index([taskId])
+  @@index([reporterUserId, createdAt])
+}

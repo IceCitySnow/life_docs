@@ -1,0 +1,68 @@
+# Production-like stack: API + PostgreSQL.
+# PostgreSQL is NOT published to the host (no public DB port).
+# Put TLS in front with nginx/Caddy (see deploy/nginx.conf.example).
+#
+# Usage:
+#   1. Copy backend/.env.production.example -> backend/.env.production and fill secrets
+#   2. docker compose -f docker-compose.prod.yml --env-file backend/.env.production up -d --build
+#   3. curl http://127.0.0.1:3000/api/v1/health
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: life-exploration-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-life_exploration}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-life_exploration}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Intentionally no host ports: DB stays on the compose network only.
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: life-exploration-api-prod
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      API_PREFIX: api/v1
+      DATABASE_URL: postgresql://${POSTGRES_USER:-life_exploration}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-life_exploration}?schema=public
+      AUTH_TOKEN_TTL_SECONDS: ${AUTH_TOKEN_TTL_SECONDS:-604800}
+      ENABLE_DEV_AUTH: 'false'
+      WECHAT_APP_ID: ${WECHAT_APP_ID:?WECHAT_APP_ID is required}
+      WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:?WECHAT_APP_SECRET is required}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      # Bind to loopback so the API is only reachable via local reverse proxy / SSH tunnel.
+      - '127.0.0.1:3000:3000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://127.0.0.1:3000/api/v1/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  postgres_prod_data:

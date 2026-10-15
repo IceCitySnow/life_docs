@@ -1,0 +1,27 @@
+<view class="page">
+  <view class="page-title">写一条回忆</view>
+  <view class="page-desc">可选填写。默认仅自己可见。</view>
+
+  <view class="card">
+    <view class="card-meta">关联任务</view>
+    <view class="card-title">{{title}}</view>
+  </view>
+
+  <view class="section-title">感受</view>
+  <textarea
+    class="textarea"
+    placeholder="这一刻你注意到了什么？"
+    maxlength="2000"
+    value="{{reflectionText}}"
+    bindinput="onInput"
+  />
+
+  <view class="btn-row">
+    <view class="btn {{visibility === 'PRIVATE' ? 'primary' : ''}}" data-value="PRIVATE" bindtap="onVisibility">仅自己</view>
+    <view class="btn {{visibility === 'PUBLIC' ? 'primary' : ''}}" data-value="PUBLIC" bindtap="onVisibility">公开（社交阶段）</view>
+  </view>
+
+  <view class="btn-row">
+    <view class="btn primary {{busy ? 'disabled' : ''}}" bindtap="onSubmit">保存回忆</view>
+  </view>
+</view>

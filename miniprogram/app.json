@@ -1,0 +1,41 @@
+{
+  "pages": [
+    "pages/explore/index",
+    "pages/atlas/index",
+    "pages/discover/index",
+    "pages/profile/index",
+    "pages/task-detail/index",
+    "pages/record-edit/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "人生探索图鉴",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f7f7f7"
+  },
+  "tabBar": {
+    "color": "#666666",
+    "selectedColor": "#1f6f5b",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/explore/index",
+        "text": "探索"
+      },
+      {
+        "pagePath": "pages/atlas/index",
+        "text": "图鉴"
+      },
+      {
+        "pagePath": "pages/discover/index",
+        "text": "发现"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

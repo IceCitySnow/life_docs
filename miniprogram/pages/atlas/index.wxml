@@ -1,0 +1,53 @@
+<view class="page">
+  <view class="page-title">图鉴</view>
+  <view class="page-desc">记录你已点亮的探索足迹。</view>
+
+  <view class="state-box" wx:if="{{loading}}">
+    <view class="state-title">加载中…</view>
+  </view>
+
+  <view class="state-box" wx:elif="{{error}}">
+    <view class="state-title">加载失败</view>
+    <view>{{error}}</view>
+    <view class="state-action" bindtap="onRetry">重试</view>
+  </view>
+
+  <block wx:else>
+    <view class="card">
+      <view class="card-title">进度 {{stats.progressText}}</view>
+      <view class="card-summary">
+        已点亮 {{stats.litCount}} / {{stats.publishedTaskCount}} 个任务
+      </view>
+    </view>
+
+    <view class="section-title" wx:if="{{categories.length}}">分类点亮</view>
+    <view class="chip-row" wx:if="{{categories.length}}">
+      <view class="chip" wx:for="{{categories}}" wx:key="categoryId">
+        {{item.name}} · {{item.litCount}}
+      </view>
+    </view>
+
+    <view class="state-box" wx:if="{{empty}}">
+      <view class="state-title">还没有点亮</view>
+      <view>去「探索」完成一个任务，这里就会亮起来。</view>
+    </view>
+
+    <block wx:else>
+      <view class="section-title">已点亮</view>
+      <view
+        class="card"
+        wx:for="{{litTasks}}"
+        wx:key="taskId"
+        data-id="{{item.taskId}}"
+        bindtap="onOpenTask"
+      >
+        <view class="card-title">{{item.title}}</view>
+        <view class="card-meta">
+          {{item.categoryName}} · {{item.difficultyLabel}}
+          <text wx:if="{{item.completedAtText}}"> · {{item.completedAtText}}</text>
+        </view>
+        <view class="card-summary">{{item.summary}}</view>
+      </view>
+    </block>
+  </block>
+</view>
