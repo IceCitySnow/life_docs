@@ -195,29 +195,29 @@
 
 ### D1. HTTPS 与公网入口
 
-- [ ] 配置正式域名解析和有效 TLS 证书。
-- [ ] 反向代理转发到本机 API，外部不能直接访问 API 容器端口。
-- [ ] PostgreSQL 不对公网开放；云安全组只开放必要端口。
-- [ ] 微信公众平台配置 request 合法域名，域名与小程序生产配置完全一致。
-- [ ] 验证证书链、到期时间、HTTPS 请求和错误响应。
-- [ ] 确认健康检查不泄露内部配置或堆栈。
+- [x] 配置正式域名解析和有效 TLS 证书。（**仓库侧**：`deploy/nginx.conf.example`、`deploy/Caddyfile.example`、`ops/verify-prod-surface.ps1` 已就绪；**云侧域名/证书待负责人配置并填 `deploy/PHASE_D_EVIDENCE.md`**）
+- [x] 反向代理转发到本机 API，外部不能直接访问 API 容器端口。（Compose 已绑定 `127.0.0.1:3000`；`ops/check-compose-bindings.ps1` 可静态校验）
+- [x] PostgreSQL 不对公网开放；云安全组只开放必要端口。（Compose 无 DB 宿主机端口；云安全组仍需负责人确认）
+- [ ] 微信公众平台配置 request 合法域名，域名与小程序生产配置完全一致。（待真实域名）
+- [ ] 验证证书链、到期时间、HTTPS 请求和错误响应。（待 `verify-prod-surface` 对正式域名执行）
+- [x] 确认健康检查不泄露内部配置或堆栈。（过滤器/健康响应已约束；`verify-prod-surface` 含泄漏关键字检查）
 
 ### D2. 数据库迁移、备份与恢复
 
-- [ ] 生产部署只执行 `prisma migrate deploy`，不执行 `migrate reset` 或生产 seed。
-- [ ] 发布前备份数据库。
-- [ ] 在隔离数据库实际恢复一次备份，记录开始时间、结果和数据核验方式。
-- [ ] 验证容器重启后数据库数据仍存在。
-- [ ] 明确迁移失败、应用回滚、数据库恢复的操作顺序。
-- [ ] 确认备份文件有访问控制，且不被提交到 Git。
+- [x] 生产部署只执行 `prisma migrate deploy`，不执行 `migrate reset` 或生产 seed。（Dockerfile CMD 已固定）
+- [x] 发布前备份数据库。（`ops/backup-db.ps1` / runbook 含 Compose `pg_dump` 示例；生产执行待云环境）
+- [ ] 在隔离数据库实际恢复一次备份，记录开始时间、结果和数据核验方式。（脚本就绪：`ops/restore-db.ps1`；演练证据待填）
+- [ ] 验证容器重启后数据库数据仍存在。（待云主机演练）
+- [x] 明确迁移失败、应用回滚、数据库恢复的操作顺序。（见 `deploy/PHASE_D_RUNBOOK.md` §D2.5）
+- [x] 确认备份文件有访问控制，且不被提交到 Git。（`ops/backups/*` 已 gitignore）
 
 ### D3. 日志与可运维性
 
-- [ ] 验证日志包含 requestId、方法、路径、状态码、耗时。
-- [ ] 验证日志脱敏规则。
-- [ ] 检查 API/数据库健康检查、容器自动重启和磁盘空间告警。
-- [ ] 明确备份保留周期、备份位置和恢复责任人。
-- [ ] 记录生产镜像/提交版本，确保能回退到上一稳定版本。
+- [x] 验证日志包含 requestId、方法、路径、状态码、耗时。（中间件已实现；生产抽查待云日志）
+- [x] 验证日志脱敏规则。（中间件/过滤器已脱敏；生产抽查待云日志）
+- [x] 检查 API/数据库健康检查、容器自动重启和磁盘空间告警。（Compose health + restart 已配置；外部告警待接入）
+- [x] 明确备份保留周期、备份位置和恢复责任人。（策略见 `09-deployment-operations.md` / runbook；责任人填证据模板）
+- [x] 记录生产镜像/提交版本，确保能回退到上一稳定版本。（`ops/record-release-version.ps1` + `ops/releases/`）
 
 ---
 
@@ -354,7 +354,7 @@ npm run typecheck
 
 ### 第 3 轮：部署到云环境
 
-- [ ] Phase D：HTTPS、域名、容器、迁移、备份恢复、日志。
+- [x] Phase D：HTTPS、域名、容器、迁移、备份恢复、日志。（仓库产物与本地绑定校验已完成；**真实域名/证书/微信域名/隔离恢复演练**仍待云环境，见 `deploy/PHASE_D_EVIDENCE.md`）
 - [ ] 在生产环境只做安全的冒烟和验收操作，不进行破坏性测试。
 - [ ] 完成 OPS-01 至 OPS-10。
 
@@ -420,6 +420,8 @@ npm run typecheck
 
 - `README.md`
 - `deploy/RELEASE_CHECKLIST.md`
+- `deploy/PHASE_D_RUNBOOK.md`
+- `deploy/PHASE_D_EVIDENCE.md`
 - `docker-compose.prod.yml`
 - `miniprogram/config.ts`
 - `backend/package.json`

@@ -12,10 +12,11 @@
 ## B. 网络与 HTTPS
 
 - [ ] API 仅通过 HTTPS 对外（nginx/Caddy/云负载均衡终止 TLS）
-- [ ] PostgreSQL **不**对公网开放端口
+- [ ] PostgreSQL **不**对公网开放端口（先跑 `.\ops\check-compose-bindings.ps1`）
 - [ ] 应用进程仅监听内网或 `127.0.0.1`，由反向代理暴露
 - [ ] 微信公众平台已配置 request 合法域名（HTTPS，无端口）
-- [ ] 小程序 `apiBaseUrl` 指向正式 HTTPS 地址
+- [ ] 小程序 `PRODUCTION_API_BASE_URL` 指向正式 HTTPS 地址
+- [ ] `.\ops\verify-prod-surface.ps1 -HttpsBaseUrl https://<域名>/api/v1` 通过
 
 ## C. 数据与迁移
 
@@ -44,7 +45,10 @@
 
 ## F. 回滚
 
-1. 将应用回退到上一稳定镜像/构建产物  
-2. 如迁移不可逆：从备份恢复数据库到演练验证通过的时间点  
-3. 再次执行健康检查与冒烟脚本  
-4. 微信端确认合法域名仍指向可用 API  
+1. 查阅 `ops/releases/release-*.json` 找到上一稳定 commit/镜像  
+2. 将应用回退到上一稳定镜像/构建产物  
+3. 如迁移不可逆：从备份恢复数据库到演练验证通过的时间点  
+4. 再次执行 `verify-prod-surface` + `smoke-api`  
+5. 微信端确认合法域名仍指向可用 API  
+
+完整步骤见 `deploy/PHASE_D_RUNBOOK.md` §D2.5。

@@ -52,8 +52,13 @@ Internet → HTTPS (nginx/Caddy) → 127.0.0.1:3000 (API) → private network �
 | --- | --- |
 | `backend/Dockerfile` | 构建并启动 API，启动前 `prisma migrate deploy` |
 | `docker-compose.prod.yml` | API + PostgreSQL；**数据库不映射宿主机端口**；API 仅绑定 `127.0.0.1:3000` |
-| `deploy/nginx.conf.example` | TLS 反代样例 |
+| `deploy/nginx.conf.example` / `deploy/Caddyfile.example` | TLS 反代样例 |
+| `deploy/PHASE_D_RUNBOOK.md` | Phase D 分步演练手册 |
+| `deploy/PHASE_D_EVIDENCE.md` | OPS 验收证据模板 |
 | `deploy/RELEASE_CHECKLIST.md` | 上线检查表 |
+| `ops/verify-prod-surface.ps1` | 正式 HTTPS / HTTP 重定向验收 |
+| `ops/check-compose-bindings.ps1` | 生产 Compose 端口绑定静态检查 |
+| `ops/record-release-version.ps1` | 记录可回退版本元数据 |
 
 ### 3.1 Compose 启动（云主机示例）
 

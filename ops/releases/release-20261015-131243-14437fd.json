@@ -1,0 +1,11 @@
+﻿{
+    "recordedAt":  "2026-10-15T13:12:43.9987048+08:00",
+    "gitCommit":  "14437fd9d6accf24d3947d9130f359e44aaa71b9",
+    "gitCommitShort":  "14437fd",
+    "gitBranch":  "master",
+    "workingTreeDirty":  true,
+    "imageTag":  "",
+    "note":  "phase-d runbook baseline after A-C push",
+    "composeFile":  "docker-compose.prod.yml",
+    "rollbackHint":  "Redeploy previous image/tag or git checkout prior commit; restore DB from ops/backups if migration unsafe."
+}

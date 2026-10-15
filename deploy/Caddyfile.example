@@ -1,0 +1,24 @@
+# Example Caddy reverse proxy with automatic HTTPS.
+# Replace api.example.com before use.
+#
+# Upstream is loopback-only (see docker-compose.prod.yml).
+#
+# Install Caddy on the host, place this file, then:
+#   caddy run --config /etc/caddy/Caddyfile
+
+api.example.com {
+	encode gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		-Server
+	}
+
+	reverse_proxy 127.0.0.1:3000 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote_host}
+	}
+}
+
+# Optional: explicit HTTP->HTTPS is handled by Caddy automatically for this site block.

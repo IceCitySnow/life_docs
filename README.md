@@ -139,23 +139,29 @@ API 地址由 `miniprogram/config.ts` 按 `envVersion` 解析：
 
 发布前：把 `PRODUCTION_API_BASE_URL` 改为已在微信公众平台登记的 HTTPS 域名（勿使用 localhost 或 HTTP）。未改占位域名时，正式版请求会被拦截。
 
-### 5.5 生产部署（Phase 5）
+### 5.5 生产部署（Phase D）
 
-详见 `09-deployment-operations.md` 与 `deploy/RELEASE_CHECKLIST.md`。
+逐步手册：`deploy/PHASE_D_RUNBOOK.md`；上线检查：`deploy/RELEASE_CHECKLIST.md`；证据模板：`deploy/PHASE_D_EVIDENCE.md`。
 
 ```bash
 # 生产样例栈（DB 不对宿主机暴露；API 仅本机 3000）
 cp backend/.env.production.example backend/.env.production
-# 填入 POSTGRES_PASSWORD / WECHAT_* 后：
+# 填入 POSTGRES_PASSWORD / WECHAT_* / PUBLIC_API_BASE_URL 后：
 docker compose -f docker-compose.prod.yml --env-file backend/.env.production up -d --build
 
-# 冒烟与备份恢复（Windows）
-.\ops\smoke-api.ps1
+# 本地绑定安全检查 + 冒烟 + 备份恢复（Windows）
+.\ops\check-compose-bindings.ps1
+.\ops\smoke-api.ps1 -BaseUrl http://127.0.0.1:3000/api/v1
 .\ops\backup-db.ps1
 .\ops\restore-db.ps1 -DumpFile .\ops\backups\<file>.dump -DropTargetAfter
+
+# 正式 HTTPS 验收（域名与证书就绪后）
+.\ops\verify-prod-surface.ps1 -HttpsBaseUrl https://api.yourdomain.com/api/v1
+.\ops\record-release-version.ps1 -Note 'prod deploy'
 ```
 
-生产后端必须 `NODE_ENV=production` 且 `ENABLE_DEV_AUTH=false`（校验层会拒绝生产开启 dev auth）。
+反代样例：`deploy/nginx.conf.example`、`deploy/Caddyfile.example`。  
+生产后端必须 `NODE_ENV=production` 且 `ENABLE_DEV_AUTH=false`；小程序 `PRODUCTION_API_BASE_URL` 与微信合法域名一致。
 
 ### 5.6 稳定性与合规文档（Phase 7）
 
