@@ -123,12 +123,21 @@ curl -X POST http://localhost:3000/api/v1/admin/tasks ^
 `miniprogramRoot: miniprogram/`），或直接打开 `miniprogram/`
 目录。
 
-本地联调注意：
+API 地址由 `miniprogram/config.ts` 按 `envVersion` 解析：
+
+| 环境 | 默认 API | storage `api_base_url` 覆盖 | 微信登录失败后的 dev-login |
+| --- | --- | --- | --- |
+| `develop` / `trial` | `DEVELOPMENT_API_BASE_URL`（默认 `http://localhost:3000/api/v1`） | 允许 http/https | 允许（仍需后端 `ENABLE_DEV_AUTH=true`） |
+| `release` | `PRODUCTION_API_BASE_URL`（必须 HTTPS 合法域名） | 仅允许安全 HTTPS；localhost/内网/HTTP 会被忽略 | **禁止**，展示明确错误 |
+
+本地联调（`develop`）：
 
 1. 先启动后端（`http://localhost:3000`），`.env` 中 `ENABLE_DEV_AUTH=true`
-2. 开发者工具中勾选「不校验合法域名、web-view（业务域名）、TLS 版本以及 HTTPS 证书」
-3. 小程序启动时优先 `wx.login` → `/auth/wechat`；失败则自动走 `/auth/dev-login`
+2. 开发者工具中可勾选「不校验合法域名…」——**仅开发者工具本地调试有效，正式版/体验版以微信后台合法域名为准，不能依赖此勾选**
+3. 优先 `wx.login` → `/auth/wechat`；仅非正式版且微信登录失败时，才回退 `/auth/dev-login`
 4. 闭环路径：探索列表 → 任务详情（收藏/愿望/开始/完成）→ 写回忆 → 图鉴 / 我的
+
+发布前：把 `PRODUCTION_API_BASE_URL` 改为已在微信公众平台登记的 HTTPS 域名（勿使用 localhost 或 HTTP）。未改占位域名时，正式版请求会被拦截。
 
 ### 5.5 生产部署（Phase 5）
 
@@ -146,7 +155,7 @@ docker compose -f docker-compose.prod.yml --env-file backend/.env.production up 
 .\ops\restore-db.ps1 -DumpFile .\ops\backups\<file>.dump -DropTargetAfter
 ```
 
-小程序正式环境把 `miniprogram/config.ts` 中 `DEFAULT_API_BASE_URL` 改为 HTTPS 合法域名。
+生产后端必须 `NODE_ENV=production` 且 `ENABLE_DEV_AUTH=false`（校验层会拒绝生产开启 dev auth）。
 
 ### 5.6 稳定性与合规文档（Phase 7）
 
@@ -172,7 +181,8 @@ npm run check
 
 ```bash
 npm run format:check
-npm run lint
+npm run lint          # 仅检查，不改文件（门禁用）
+npm run lint:fix     # 本地自动修复（勿用于 CI / check）
 npm run typecheck
 npm run test
 npm run test:e2e

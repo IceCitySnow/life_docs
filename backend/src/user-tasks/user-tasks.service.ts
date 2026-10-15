@@ -49,6 +49,49 @@ export class UserTasksService {
     };
   }
 
+  /**
+   * Per-task personal state. Missing UserTask rows return empty flags
+   * (not 404) so clients need not page through /me/tasks.
+   */
+  async getMineOne(userId: string, taskId: string) {
+    await this.ensurePublishedTask(taskId);
+    const existing = await this.prisma.userTask.findUnique({
+      where: { userId_taskId: { userId, taskId } },
+      include: {
+        task: {
+          select: {
+            id: true,
+            title: true,
+            summary: true,
+            status: true,
+            difficulty: true,
+            categoryId: true,
+            coverImageUrl: true,
+            tags: true,
+          },
+        },
+      },
+    });
+
+    if (existing) {
+      return { data: existing };
+    }
+
+    return {
+      data: {
+        userId,
+        taskId,
+        isFavorite: false,
+        isWished: false,
+        startedAt: null,
+        completedAt: null,
+        createdAt: null,
+        updatedAt: null,
+        task: null,
+      },
+    };
+  }
+
   async setFavorite(userId: string, taskId: string, isFavorite: boolean) {
     await this.ensurePublishedTask(taskId);
     const data = await this.upsertFlags(userId, taskId, { isFavorite });

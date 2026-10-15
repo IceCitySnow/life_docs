@@ -59,4 +59,19 @@ describe('UserTasksService', () => {
       NotFoundException,
     );
   });
+
+  it('getMineOne returns empty flags when no UserTask row exists', async () => {
+    taskFindFirst.mockResolvedValue({ id: 't1', status: TaskStatus.PUBLISHED });
+    userTaskFindUnique.mockResolvedValue(null);
+
+    const result = await service.getMineOne('u1', 't1');
+    expect(result.data).toMatchObject({
+      userId: 'u1',
+      taskId: 't1',
+      isFavorite: false,
+      isWished: false,
+      startedAt: null,
+      completedAt: null,
+    });
+  });
 });

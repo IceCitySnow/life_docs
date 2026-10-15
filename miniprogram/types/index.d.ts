@@ -9,6 +9,10 @@ interface IAppOption {
       status: string;
     } | null;
     loginReady: Promise<string> | null;
+    sessionEpoch: number;
   };
-  ensureSession: () => Promise<string>;
+  ensureSession: (options?: {
+    optional?: boolean;
+    forceLogin?: boolean;
+  }) => Promise<string>;
 }

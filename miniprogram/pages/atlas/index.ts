@@ -31,11 +31,13 @@ Page({
     void this.loadAtlas();
   },
 
-  async loadAtlas() {
+  async loadAtlas(forceLogin = false) {
     this.setData({ loading: true, error: '' });
     try {
       const app = getApp<IAppOption>();
-      await app.ensureSession();
+      await app.ensureSession(
+        forceLogin ? { forceLogin: true } : { optional: false },
+      );
       const res = await getMyAtlas();
       const litTasks: LitView[] = res.data.litTasks.map((item) => ({
         taskId: item.taskId,
@@ -70,7 +72,7 @@ Page({
   },
 
   onRetry() {
-    void this.loadAtlas();
+    void this.loadAtlas(true);
   },
 
   onOpenTask(event: WechatMiniprogram.TouchEvent) {

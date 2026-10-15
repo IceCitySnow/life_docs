@@ -7,9 +7,10 @@
   </view>
 
   <view class="state-box" wx:elif="{{error}}">
-    <view class="state-title">加载失败</view>
+    <view class="state-title">需要登录</view>
     <view>{{error}}</view>
-    <view class="state-action" bindtap="onRetry">重试</view>
+    <view class="state-action" bindtap="onRelogin">重新登录</view>
+    <view class="state-action" bindtap="onRetry" style="margin-top:16rpx;">重试</view>
   </view>
 
   <block wx:else>
@@ -74,6 +75,11 @@
       <view class="card-meta">{{item.visibilityText}} · {{item.createdText}}</view>
       <view class="card-summary" wx:if="{{item.reflectionText}}">{{item.reflectionText}}</view>
       <view class="btn-row">
+        <view
+          class="btn {{busy ? 'disabled' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onToggleRecordVisibility"
+        >{{item.visibility === 'PUBLIC' ? '改回私密' : '公开到发现'}}</view>
         <view class="btn danger {{busy ? 'disabled' : ''}}" data-id="{{item.id}}" bindtap="onDeleteRecord">删除回忆</view>
       </view>
     </view>

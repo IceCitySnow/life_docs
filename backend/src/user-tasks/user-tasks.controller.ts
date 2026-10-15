@@ -29,6 +29,14 @@ export class UserTasksController {
     return this.userTasksService.listMine(user.id, query);
   }
 
+  @Get(':taskId')
+  getOne(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+  ) {
+    return this.userTasksService.getMineOne(user.id, taskId);
+  }
+
   @Put(':taskId/favorite')
   setFavorite(
     @CurrentUser() user: AuthenticatedUser,

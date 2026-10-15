@@ -75,4 +75,11 @@ describe('UsersService', () => {
     expect(userDelete).toHaveBeenCalledWith({ where: { id: 'u1' } });
     expect(result.data.success).toBe(true);
   });
+
+  it('treats missing user as successful idempotent delete', async () => {
+    userFindUnique.mockResolvedValue(null);
+    const result = await service.deleteMe('gone');
+    expect(result.data.success).toBe(true);
+    expect(userDelete).not.toHaveBeenCalled();
+  });
 });

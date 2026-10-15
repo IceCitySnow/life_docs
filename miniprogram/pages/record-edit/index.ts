@@ -39,7 +39,7 @@ Page({
     this.setData({ busy: true });
     try {
       const app = getApp<IAppOption>();
-      await app.ensureSession();
+      await app.ensureSession({ forceLogin: true });
       await createRecord({
         taskId: this.data.taskId,
         reflectionText: this.data.reflectionText || undefined,

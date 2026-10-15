@@ -2,7 +2,6 @@ import { getErrorMessage } from '../../services/api';
 import {
   clearCachedUser,
   clearToken,
-  ensureLogin,
   logout,
 } from '../../services/auth';
 import {
@@ -14,7 +13,12 @@ import {
   listMyRecords,
   listMyTasks,
   listWishes,
+  updateRecord,
 } from '../../services/me';
+import {
+  bumpSessionEpoch,
+  setAuthOptOut,
+} from '../../services/session';
 import type { ExplorationRecord, UserTask, Wish } from '../../types/api';
 import { formatDateTime } from '../../utils/format';
 
@@ -55,7 +59,7 @@ Page({
     this.setData({ loading: true, error: '' });
     try {
       const app = getApp<IAppOption>();
-      await app.ensureSession();
+      await app.ensureSession({ optional: false });
       const user = app.globalData.user;
 
       const [favRes, wishRes, recordRes] = await Promise.all([
@@ -179,6 +183,7 @@ Page({
     this.setData({ busy: true });
     try {
       await deleteRecord(id);
+      bumpSessionEpoch();
       wx.showToast({ title: '回忆已删除', icon: 'success' });
       await this.loadProfile();
     } catch (error) {
@@ -191,10 +196,37 @@ Page({
     }
   },
 
+  async onToggleRecordVisibility(event: WechatMiniprogram.TouchEvent) {
+    const id = String(event.currentTarget.dataset.id || '');
+    const current = this.data.records.find((item) => item.id === id);
+    if (!id || !current || this.data.busy) {
+      return;
+    }
+    const next = current.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC';
+    this.setData({ busy: true });
+    try {
+      await updateRecord(id, { visibility: next });
+      bumpSessionEpoch();
+      wx.showToast({
+        title: next === 'PUBLIC' ? '已公开到发现页' : '已改回私密',
+        icon: 'success',
+      });
+      await this.loadProfile();
+    } catch (error) {
+      wx.showToast({
+        title: getErrorMessage(error, '更新可见性失败'),
+        icon: 'none',
+      });
+    } finally {
+      this.setData({ busy: false });
+    }
+  },
+
   async onRelogin() {
     this.setData({ busy: true });
     try {
-      await ensureLogin(true);
+      const app = getApp<IAppOption>();
+      await app.ensureSession({ forceLogin: true });
       wx.showToast({ title: '已重新登录', icon: 'success' });
       await this.loadProfile();
     } catch (error) {
@@ -213,7 +245,10 @@ Page({
       await logout();
       wx.showToast({ title: '已退出', icon: 'none' });
       this.setData({
+        loading: false,
+        error: '已退出登录。浏览探索/发现无需登录；个人数据请重新登录。',
         displayName: '未登录',
+        role: '',
         favorites: [],
         wishes: [],
         records: [],
@@ -247,10 +282,15 @@ Page({
       await deleteAccount();
       clearToken();
       clearCachedUser();
+      setAuthOptOut(true);
+      const epoch = bumpSessionEpoch();
       const app = getApp<IAppOption>();
       app.globalData.user = null;
       app.globalData.loginReady = null;
+      app.globalData.sessionEpoch = epoch;
       this.setData({
+        loading: false,
+        error: '账号已注销。旧会话已失效，重新登录将创建新账号。',
         displayName: '未登录',
         role: '',
         favorites: [],

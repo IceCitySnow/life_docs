@@ -31,6 +31,12 @@ export function listMyTasks(query: {
   });
 }
 
+export function getMyTask(taskId: string) {
+  return requestApi<ApiDataResponse<UserTask>>({
+    path: `/me/tasks/${taskId}`,
+  });
+}
+
 export function setFavorite(taskId: string, favorite: boolean) {
   return requestApi<ApiDataResponse<UserTask>>({
     path: `/me/tasks/${taskId}/favorite`,
@@ -110,6 +116,22 @@ export function createRecord(payload: {
   return requestApi<ApiDataResponse<ExplorationRecord>>({
     path: '/records',
     method: 'POST',
+    data: payload,
+  });
+}
+
+export function updateRecord(
+  recordId: string,
+  payload: {
+    titleSnapshot?: string;
+    reflectionText?: string;
+    photoRefs?: string[];
+    visibility?: 'PRIVATE' | 'PUBLIC';
+  },
+) {
+  return requestApi<ApiDataResponse<ExplorationRecord>>({
+    path: `/records/${recordId}`,
+    method: 'PATCH',
     data: payload,
   });
 }

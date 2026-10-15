@@ -59,11 +59,15 @@ export class UsersService {
       where: { id: userId },
       select: { id: true, status: true },
     });
+
+    // Idempotent: already gone (or concurrent delete finished) → success.
     if (!existing) {
-      throw new NotFoundException({
-        code: 'NOT_FOUND',
-        message: 'User not found.',
-      });
+      return {
+        data: {
+          success: true,
+          note: 'Account already deleted.',
+        },
+      };
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -71,10 +75,12 @@ export class UsersService {
         where: { userId, revokedAt: null },
         data: { revokedAt: new Date() },
       });
-      await tx.user.update({
-        where: { id: userId },
-        data: { status: UserStatus.DELETING },
-      });
+      if (existing.status !== UserStatus.DELETING) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { status: UserStatus.DELETING },
+        });
+      }
       await tx.user.delete({ where: { id: userId } });
     });
 

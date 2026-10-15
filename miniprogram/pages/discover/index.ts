@@ -29,8 +29,8 @@ Page({
   async loadFeed() {
     this.setData({ loading: true, error: '' });
     try {
-      const app = getApp<IAppOption>();
-      await app.ensureSession();
+      // Public feed is anonymous-readable; login only for like/favorite state.
+      await getApp<IAppOption>().ensureSession({ optional: true });
       const res = await listPublicRecords(1, 30);
       const records: ViewRecord[] = res.data.map((item) => ({
         ...item,
@@ -77,6 +77,7 @@ Page({
       likeCount: Math.max(0, current.likeCount + (next ? 1 : -1)),
     });
     try {
+      await getApp<IAppOption>().ensureSession({ forceLogin: true });
       await likePublicRecord(id, next);
     } catch (error) {
       this.updateRecord(id, {
@@ -105,6 +106,7 @@ Page({
       favoriteCount: Math.max(0, current.favoriteCount + (next ? 1 : -1)),
     });
     try {
+      await getApp<IAppOption>().ensureSession({ forceLogin: true });
       await favoritePublicRecord(id, next);
     } catch (error) {
       this.updateRecord(id, {
@@ -128,6 +130,7 @@ Page({
     }
     this.updateRecord(id, { busy: true });
     try {
+      await getApp<IAppOption>().ensureSession({ forceLogin: true });
       await createReport({
         recordId: id,
         reason: 'OTHER',

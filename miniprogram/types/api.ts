@@ -66,15 +66,15 @@ export type LoginResult = {
 };
 
 export type UserTask = {
-  id: string;
+  id?: string;
   userId: string;
   taskId: string;
   isFavorite: boolean;
   isWished: boolean;
   startedAt: string | null;
   completedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   task?: {
     id: string;
     title: string;

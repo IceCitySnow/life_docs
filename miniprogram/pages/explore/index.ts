@@ -25,8 +25,8 @@ Page({
   async loadAll() {
     this.setData({ loading: true, error: '' });
     try {
-      const app = getApp<IAppOption>();
-      await app.ensureSession();
+      // Catalog is public; do not force re-login after explicit logout.
+      await getApp<IAppOption>().ensureSession({ optional: true });
 
       const [categoryRes, taskRes] = await Promise.all([
         listCategories(),

@@ -25,6 +25,7 @@ export function listPublicRecords(page = 1, pageSize = 20) {
   return requestApi<ApiListResponse<PublicRecordCard>>({
     path: '/public/records',
     data: { page, pageSize },
+    // Public endpoint: attach Bearer when present (likedByMe), else anonymous.
   });
 }
 

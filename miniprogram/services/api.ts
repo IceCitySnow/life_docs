@@ -1,3 +1,4 @@
+import { assertRequestBaseUrlAllowed } from '../config';
 import { clearToken, getToken } from './auth-storage';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -64,6 +65,18 @@ export function requestApi<T>(options: RequestOptions): Promise<T> {
   const method = options.method ?? 'GET';
   const useAuth = options.auth !== false;
   const token = useAuth ? getToken() : '';
+
+  try {
+    assertRequestBaseUrlAllowed(baseUrl);
+  } catch (error) {
+    return Promise.reject(
+      new ApiError(
+        error instanceof Error ? error.message : 'API 地址不安全，已阻止请求',
+        0,
+        'UNSAFE_API_BASE_URL',
+      ),
+    );
+  }
 
   let url = `${baseUrl}${options.path}`;
   let body: WechatMiniprogram.IAnyObject | string | undefined = options.data;

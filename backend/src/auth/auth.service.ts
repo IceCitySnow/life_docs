@@ -53,10 +53,22 @@ export class AuthService {
 
   async me(user: AuthenticatedUser) {
     const full = await this.prisma.user.findUnique({ where: { id: user.id } });
-    if (!full || full.status === UserStatus.DISABLED) {
+    if (!full) {
       throw new UnauthorizedException({
         code: 'UNAUTHORIZED',
         message: 'Authentication required.',
+      });
+    }
+    if (full.status === UserStatus.DISABLED) {
+      throw new ForbiddenException({
+        code: 'ACCOUNT_DISABLED',
+        message: 'Account is disabled.',
+      });
+    }
+    if (full.status === UserStatus.DELETING) {
+      throw new ForbiddenException({
+        code: 'ACCOUNT_DELETING',
+        message: 'Account is being deleted.',
       });
     }
     return { data: toPublicUser(full) };
@@ -115,23 +127,19 @@ export class AuthService {
       });
     }
 
+    // Incomplete deletion must not be reactivated by login; finish delete or wait.
+    if (existing?.status === UserStatus.DELETING) {
+      throw new ForbiddenException({
+        code: 'ACCOUNT_DELETING',
+        message: 'Account is being deleted.',
+      });
+    }
+
     if (existing) {
       if (displayName && displayName !== existing.displayName) {
         return this.prisma.user.update({
           where: { id: existing.id },
-          data: {
-            displayName,
-            status:
-              existing.status === UserStatus.DELETING
-                ? UserStatus.ACTIVE
-                : existing.status,
-          },
-        });
-      }
-      if (existing.status === UserStatus.DELETING) {
-        return this.prisma.user.update({
-          where: { id: existing.id },
-          data: { status: UserStatus.ACTIVE },
+          data: { displayName },
         });
       }
       return existing;

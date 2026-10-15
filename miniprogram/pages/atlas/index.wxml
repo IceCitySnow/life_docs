@@ -7,9 +7,9 @@
   </view>
 
   <view class="state-box" wx:elif="{{error}}">
-    <view class="state-title">加载失败</view>
+    <view class="state-title">需要登录</view>
     <view>{{error}}</view>
-    <view class="state-action" bindtap="onRetry">重试</view>
+    <view class="state-action" bindtap="onRetry">登录并重试</view>
   </view>
 
   <block wx:else>

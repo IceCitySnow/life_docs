@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  IsUrl,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -25,6 +26,7 @@ export class UpdateRecordDto {
   @IsArray()
   @ArrayMaxSize(9)
   @IsString({ each: true })
+  @IsUrl({ require_tld: false, protocols: ['http', 'https'] }, { each: true })
   @MaxLength(2048, { each: true })
   photoRefs?: string[];
 

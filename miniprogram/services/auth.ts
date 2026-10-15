@@ -1,14 +1,18 @@
+import {
+  isDevLoginAllowed,
+  isReleaseBuild,
+} from '../config';
 import type { ApiDataResponse, LoginResult, PublicUser } from '../types/api';
 import { ApiError, getErrorMessage, requestApi } from './api';
 import {
   clearCachedUser,
   clearToken,
-  getCachedUser,
   getOrCreateDevOpenId,
   getToken,
   setCachedUser,
   setToken,
 } from './auth-storage';
+import { bumpSessionEpoch, setAuthOptOut } from './session';
 
 export {
   clearCachedUser,
@@ -22,8 +26,11 @@ export {
 function applySession(result: LoginResult): string {
   setToken(result.accessToken);
   setCachedUser(result.user);
+  setAuthOptOut(false);
+  const epoch = bumpSessionEpoch();
   const app = getApp<IAppOption>();
   app.globalData.user = result.user;
+  app.globalData.sessionEpoch = epoch;
   return result.accessToken;
 }
 
@@ -39,6 +46,14 @@ async function loginWithWechatCode(code: string): Promise<string> {
 }
 
 async function loginWithDev(): Promise<string> {
+  if (!isDevLoginAllowed()) {
+    throw new ApiError(
+      '正式版不支持开发登录。请使用微信登录，或检查生产 API / 微信配置。',
+      0,
+      'DEV_LOGIN_DISABLED',
+    );
+  }
+
   const wxOpenId = getOrCreateDevOpenId();
   const res = await requestApi<ApiDataResponse<LoginResult>>({
     path: '/auth/dev-login',
@@ -86,7 +101,7 @@ async function validateToken(token: string): Promise<PublicUser | null> {
 
 /**
  * Ensure a valid session exists.
- * Prefer WeChat code exchange; fall back to ENABLE_DEV_AUTH login in local tools.
+ * WeChat code exchange first. Dev-login fallback only outside release builds.
  */
 export async function ensureLogin(force = false): Promise<string> {
   if (!force) {
@@ -95,6 +110,7 @@ export async function ensureLogin(force = false): Promise<string> {
       const user = await validateToken(existing);
       if (user) {
         setCachedUser(user);
+        setAuthOptOut(false);
         getApp<IAppOption>().globalData.user = user;
         return existing;
       }
@@ -110,6 +126,14 @@ export async function ensureLogin(force = false): Promise<string> {
     const code = await wxLoginCode();
     return await loginWithWechatCode(code);
   } catch (wechatError) {
+    if (!isDevLoginAllowed()) {
+      throw new ApiError(
+        `${getErrorMessage(wechatError, '微信登录失败')}。请稍后重试，或检查网络与微信开放平台配置。`,
+        0,
+        'LOGIN_FAILED',
+      );
+    }
+
     try {
       return await loginWithDev();
     } catch (devError) {
@@ -118,7 +142,7 @@ export async function ensureLogin(force = false): Promise<string> {
         getErrorMessage(devError, '开发登录失败'),
       ].join('；');
       throw new ApiError(
-        `${message}。请确认后端已启动且 ENABLE_DEV_AUTH=true（本地联调）。`,
+        `${message}。开发联调请确认后端已启动且 ENABLE_DEV_AUTH=true（仅非正式版）。当前环境：${isReleaseBuild() ? 'release' : 'develop/trial'}。`,
         0,
         'LOGIN_FAILED',
       );
@@ -141,9 +165,12 @@ export async function logout(): Promise<void> {
   }
   clearToken();
   clearCachedUser();
+  setAuthOptOut(true);
+  const epoch = bumpSessionEpoch();
   const app = getApp<IAppOption>();
   app.globalData.user = null;
   app.globalData.loginReady = null;
+  app.globalData.sessionEpoch = epoch;
 }
 
 export function showLoginExpiredToast(): void {

@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  IsUrl,
   IsUUID,
   MaxLength,
   MinLength,
@@ -35,6 +36,7 @@ export class CreateRecordDto {
   @IsArray()
   @ArrayMaxSize(9)
   @IsString({ each: true })
+  @IsUrl({ require_tld: false, protocols: ['http', 'https'] }, { each: true })
   @MaxLength(2048, { each: true })
   photoRefs?: string[];
 

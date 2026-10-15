@@ -2,11 +2,12 @@ import { getErrorMessage } from '../../services/api';
 import { getTask } from '../../services/catalog';
 import {
   completeTask,
-  listMyTasks,
+  getMyTask,
   setFavorite,
   setWish,
   startTask,
 } from '../../services/me';
+import { getSessionEpoch } from '../../services/session';
 import type { TaskDetail, UserTask } from '../../types/api';
 import { difficultyLabel } from '../../utils/labels';
 
@@ -35,12 +36,21 @@ Page({
       startedAt: null,
       completedAt: null,
     } as Flags,
+    needsLogin: false,
   },
+
+  _sessionEpoch: 0,
 
   onLoad(query: Record<string, string | undefined>) {
     const taskId = query.id || '';
     this.setData({ taskId });
     void this.loadDetail();
+  },
+
+  onShow() {
+    if (this._sessionEpoch !== getSessionEpoch() && this.data.taskId) {
+      void this.loadDetail();
+    }
   },
 
   async loadDetail() {
@@ -49,23 +59,27 @@ Page({
       return;
     }
 
-    this.setData({ loading: true, error: '' });
+    this.setData({ loading: true, error: '', needsLogin: false });
     try {
       const app = getApp<IAppOption>();
-      await app.ensureSession();
+      // Task catalog is public; personal flags require login.
+      let mine: UserTask | undefined;
+      try {
+        await app.ensureSession({ optional: false });
+        const mineRes = await getMyTask(this.data.taskId);
+        mine = mineRes.data;
+      } catch {
+        this.setData({ needsLogin: true });
+      }
 
-      const [taskRes, mineRes] = await Promise.all([
-        getTask(this.data.taskId),
-        listMyTasks({ page: 1, pageSize: 50 }),
-      ]);
-
-      const mine = mineRes.data.find((item) => item.taskId === this.data.taskId);
+      const taskRes = await getTask(this.data.taskId);
       const task: ViewTask = {
         ...taskRes.data,
         difficultyLabel: difficultyLabel(taskRes.data.difficulty),
         categoryName: taskRes.data.category?.name || '',
       };
 
+      this._sessionEpoch = getSessionEpoch();
       this.setData({
         task,
         flags: this.toFlags(mine),
@@ -93,6 +107,19 @@ Page({
     void this.loadDetail();
   },
 
+  async onLoginForActions() {
+    try {
+      const app = getApp<IAppOption>();
+      await app.ensureSession({ forceLogin: true });
+      await this.loadDetail();
+    } catch (error) {
+      wx.showToast({
+        title: getErrorMessage(error, '登录失败'),
+        icon: 'none',
+      });
+    }
+  },
+
   async runAction(action: () => Promise<UserTask>, successText: string) {
     if (this.data.busy) {
       return;
@@ -100,9 +127,9 @@ Page({
     this.setData({ busy: true });
     try {
       const app = getApp<IAppOption>();
-      await app.ensureSession();
+      await app.ensureSession({ forceLogin: true });
       const data = await action();
-      this.setData({ flags: this.toFlags(data) });
+      this.setData({ flags: this.toFlags(data), needsLogin: false });
       wx.showToast({ title: successText, icon: 'success' });
     } catch (error) {
       wx.showToast({

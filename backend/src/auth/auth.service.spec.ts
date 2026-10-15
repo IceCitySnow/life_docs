@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { UserRole, UserStatus } from '@prisma/client';
 import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -97,5 +97,42 @@ describe('AuthService', () => {
     });
 
     await expect(service.authenticateBearerToken('token')).rejects.toBeTruthy();
+  });
+
+  it('rejects expired sessions even when not revoked', async () => {
+    sessionFindUnique.mockResolvedValue({
+      id: 's1',
+      revokedAt: null,
+      expiresAt: new Date(Date.now() - 1_000),
+      user: {
+        id: 'u1',
+        role: UserRole.USER,
+        status: UserStatus.ACTIVE,
+        displayName: null,
+        avatarUrl: null,
+      },
+    });
+
+    await expect(service.authenticateBearerToken('token')).rejects.toBeTruthy();
+  });
+
+  it('does not reactivate DELETING accounts on login', async () => {
+    (config.isDevAuthEnabled as jest.Mock).mockReturnValue(true);
+    userFindUnique.mockResolvedValue({
+      id: 'u1',
+      wxOpenId: 'deleting-openid',
+      displayName: null,
+      avatarUrl: null,
+      role: UserRole.USER,
+      status: UserStatus.DELETING,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await expect(
+      service.loginWithDevOpenId('deleting-openid'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(userUpdate).not.toHaveBeenCalled();
+    expect(sessionCreate).not.toHaveBeenCalled();
   });
 });

@@ -37,7 +37,13 @@
     </view>
 
     <view class="section-title">我的状态</view>
-    <view class="card">
+    <view class="card" wx:if="{{needsLogin}}">
+      <view class="card-summary">登录后可同步收藏、愿望与完成状态。</view>
+      <view class="btn-row">
+        <view class="btn primary" bindtap="onLoginForActions">去登录</view>
+      </view>
+    </view>
+    <view class="card" wx:else>
       <view class="card-summary">
         收藏：{{flags.isFavorite ? '已收藏' : '未收藏'}} ·
         愿望：{{flags.isWished ? '已加入' : '未加入'}} ·
